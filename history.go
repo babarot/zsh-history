@@ -3,16 +3,34 @@ package history
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"text/tabwriter"
 
 	"github.com/b4b4r07/zsh-history/db"
+	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
 )
+
+var times int
 
 const (
 	DefaultY int    = 1
 	Prompt   string = "> "
 )
+
+var input = []rune{}
+
+// var files = []string{}
+// var heading = false
+// var current filtered
+var width, height int
+var cursor_x, cursor_y int
+
+// var select_cursor int
+
+// var width, height int
+// var mutex sync.Mutex
+// var launcherFiles = []string{}
 
 var (
 	f *[]rune
@@ -49,7 +67,9 @@ func (h *History) render() bool {
 
 	contents := []string{}
 	for {
-		h.filterByQuery(string(*f))
+		update := false
+
+		h.filterByQuery(string(input))
 		for _, row := range h.rows {
 			contents = append(contents, fmt.Sprintf("%#v", row))
 		}
@@ -57,54 +77,128 @@ func (h *History) render() bool {
 			contents = []string{}
 		}
 		draw(contents)
+		// log.Println(cursor_x, cursor_y)
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeyEsc, termbox.KeyCtrlC:
 				return false
-			case termbox.KeySpace:
-				*f = append(*f, rune(' '))
+			case termbox.KeyArrowUp, termbox.KeyCtrlP:
+				// if cursor_y < len(input)-1 {
+				// 	if cursor_y < height-4 {
+				if cursor_y > 0 {
+					cursor_y--
+				}
+				// 	}
+				// }
+				// update = true
+			case termbox.KeyArrowDown, termbox.KeyCtrlN:
+				if len(h.rows) > 0 {
+					cursor_y++
+				}
+				// update = true
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
+				if cursor_x > 0 {
+					cursor_x--
+				}
 			case termbox.KeyArrowRight, termbox.KeyCtrlF:
+				if cursor_x < len([]rune(input)) {
+					cursor_x++
+				}
 			case termbox.KeyHome, termbox.KeyCtrlA:
+				cursor_x = 0
 			case termbox.KeyEnd, termbox.KeyCtrlE:
-			case termbox.KeyCtrlW:
-				//delete whole word to period
+				cursor_x = len(string(input))
 			case termbox.KeyBackspace, termbox.KeyBackspace2:
-				if i := len(*f) - 1; i >= 0 {
-					slice := *f
-					*f = slice[0:i]
+				if i := len(input) - 1; i >= 0 {
+					cursor_x--
+					slice := input
+					input = slice[0:i]
 				}
 			case termbox.KeyEnter:
 				return true
-			case 0:
-				*f = append(*f, rune(ev.Ch))
+			// case termbox.KeySpace:
+			// 	input = append(input, rune(' '))
+			// case 0:
+			// 	input = append(input, rune(ev.Ch))
+			// 	cursor_x++
+			// default:
+			case termbox.KeyCtrlW:
+				part := string(input[0:cursor_x])
+				rest := input[cursor_x:len(input)]
+				pos := regexp.MustCompile(`\s+`).FindStringIndex(part)
+				if len(pos) > 0 && pos[len(pos)-1] > 0 {
+					input = []rune(part[0 : pos[len(pos)-1]-1])
+					input = append(input, rest...)
+				} else {
+					input = []rune{}
+				}
+				cursor_x = len(input)
+				// update = true
 			default:
+				cursor_y = 0
+				if ev.Key == termbox.KeySpace {
+					ev.Ch = ' '
+				}
+				if ev.Ch > 0 {
+					out := []rune{}
+					out = append(out, input[0:cursor_x]...)
+					out = append(out, ev.Ch)
+					input = append(out, input[cursor_x:len(input)]...)
+					cursor_x++
+					// update = true
+				}
 			}
 		case termbox.EventError:
 			panic(ev.Err)
 			break
 		default:
 		}
+		if update {
+			draw(contents)
+		}
 	}
 }
 
 func (h *History) filterByQuery(q string) {
-	rows, err := h.Query(q)
-	if err == nil {
-		h.rows = rows
-	} else {
-		h.rows = db.Records{}
+	if len(h.rows) == 0 {
+		rows, err := h.Query(q)
+		if err == nil {
+			h.rows = rows
+		} else {
+			h.rows = db.Records{}
+		}
+	}
+}
+
+func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
+	for _, c := range []rune(msg) {
+		termbox.SetCell(x, y, c, fg, bg)
+		x += runewidth.RuneWidth(c)
 	}
 }
 
 func draw(rows []string) {
+	width, height = termbox.Size()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	fs := Prompt + string(*f)
+
+	fs := Prompt + string(input)
+	if cursor_y < 0 {
+		cursor_y = 0
+	}
+	if cursor_y >= height {
+		cursor_y = height - 1
+	}
 	drawln(0, 0, fs)
-	termbox.SetCursor(len(fs), 0)
+	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursor_x])), 0)
 	for idx, row := range rows {
-		drawln(0, idx+DefaultY, fmt.Sprintf("%#v\n", row))
+		if idx == cursor_y {
+			// drawln(0, idx+DefaultY, "hoge")
+			print_tb(2, idx+DefaultY, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, fmt.Sprintf("%#v\n", row))
+		} else {
+			print_tb(2, idx+DefaultY, termbox.ColorDefault, termbox.ColorDefault, fmt.Sprintf("%#v\n", row))
+			// drawln(0, idx+DefaultY, fmt.Sprintf("%#v\n", row))
+		}
 	}
 	termbox.Flush()
 }
@@ -141,5 +235,7 @@ func (h *History) List() error {
 }
 
 func (h *History) Query(query string) (db.Records, error) {
+	times++
+	println("used ", times)
 	return h.DB.Query(query)
 }
