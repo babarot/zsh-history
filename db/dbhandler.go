@@ -74,6 +74,9 @@ func newHistory(cmd string, status int) Record {
 
 func (db *DBHandler) Query(query string) (Records, error) {
 	var rs Records
+	if query == "" {
+		return rs, nil
+	}
 	_, err := db.dbMap.Select(&rs, query)
 	return rs, err
 }
@@ -88,16 +91,6 @@ func (db *DBHandler) Insert(cmd string, status int) error {
 }
 
 func initDb() *gorp.DbMap {
-	// if DBPath == "" {
-	// 	fmt.Fprintf(os.Stderr, "Please set ZSH_HISTORY_FILE\n")
-	// 	return nil
-	// }
-	//
-	// if _, err := os.Stat(DBPath); os.IsNotExist(err) {
-	// 	fmt.Fprintf(os.Stderr, "%s: no such db file\n", DBPath)
-	// 	return nil
-	// }
-
 	// connect to db using standard Go database/sql API
 	db, err := sql.Open("sqlite3", DBPath)
 	if err != nil {
