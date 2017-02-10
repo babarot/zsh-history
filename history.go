@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	// "sync"
 	"text/tabwriter"
 
 	"github.com/b4b4r07/zsh-history/db"
@@ -11,30 +12,14 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-var times int
-
 const (
 	DefaultY int    = 1
-	Prompt   string = "> "
+	Prompt   string = "sqlite3> "
 )
 
 var input = []rune{}
-
-// var files = []string{}
-// var heading = false
-// var current filtered
 var width, height int
 var cursor_x, cursor_y int
-
-// var select_cursor int
-
-// var width, height int
-// var mutex sync.Mutex
-// var launcherFiles = []string{}
-
-var (
-	f *[]rune
-)
 
 type History struct {
 	DB   *db.DBHandler
@@ -63,7 +48,8 @@ func (h *History) render() bool {
 	}
 	defer termbox.Close()
 
-	f = &[]rune{}
+	input = []rune("select * from history")
+	cursor_x = len(string(input))
 
 	contents := []string{}
 	for {
@@ -77,20 +63,15 @@ func (h *History) render() bool {
 			contents = []string{}
 		}
 		draw(contents)
-		// log.Println(cursor_x, cursor_y)
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeyEsc, termbox.KeyCtrlC:
 				return false
 			case termbox.KeyArrowUp, termbox.KeyCtrlP:
-				// if cursor_y < len(input)-1 {
-				// 	if cursor_y < height-4 {
 				if cursor_y > 0 {
 					cursor_y--
 				}
-				// 	}
-				// }
 				// update = true
 			case termbox.KeyArrowDown, termbox.KeyCtrlN:
 				if len(h.rows) > 0 {
@@ -110,10 +91,15 @@ func (h *History) render() bool {
 			case termbox.KeyEnd, termbox.KeyCtrlE:
 				cursor_x = len(string(input))
 			case termbox.KeyBackspace, termbox.KeyBackspace2:
-				if i := len(input) - 1; i >= 0 {
+				// if i := len(input) - 1; i >= 0 {
+				// 	cursor_x--
+				// 	slice := input
+				// 	input = slice[0:i]
+				// }
+				if cursor_x > 0 {
+					input = append(input[0:cursor_x-1], input[cursor_x:len(input)]...)
 					cursor_x--
-					slice := input
-					input = slice[0:i]
+					update = true
 				}
 			case termbox.KeyEnter:
 				return true
@@ -161,6 +147,13 @@ func (h *History) render() bool {
 }
 
 func (h *History) filterByQuery(q string) {
+	// mutex.Lock()
+	// defer mutex.Unlock()
+	//
+	// defer func() {
+	// 	recover()
+	// }()
+
 	if len(h.rows) == 0 {
 		rows, err := h.Query(q)
 		if err == nil {
@@ -190,13 +183,14 @@ func draw(rows []string) {
 		cursor_y = height - 1
 	}
 	drawln(0, 0, fs)
-	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursor_x])), 0)
+	pos := len(Prompt)
+	termbox.SetCursor(pos+runewidth.StringWidth(string(input[0:cursor_x])), 0)
 	for idx, row := range rows {
 		if idx == cursor_y {
 			// drawln(0, idx+DefaultY, "hoge")
-			print_tb(2, idx+DefaultY, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, fmt.Sprintf("%#v\n", row))
+			print_tb(0, idx+DefaultY, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, row)
 		} else {
-			print_tb(2, idx+DefaultY, termbox.ColorDefault, termbox.ColorDefault, fmt.Sprintf("%#v\n", row))
+			print_tb(0, idx+DefaultY, termbox.ColorDefault, termbox.ColorDefault, row)
 			// drawln(0, idx+DefaultY, fmt.Sprintf("%#v\n", row))
 		}
 	}
@@ -235,7 +229,5 @@ func (h *History) List() error {
 }
 
 func (h *History) Query(query string) (db.Records, error) {
-	times++
-	println("used ", times)
 	return h.DB.Query(query)
 }
