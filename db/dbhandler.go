@@ -14,20 +14,11 @@ const (
 	Table = "history"
 )
 
-const (
-	ColumnID        = "id"
-	ColumnDateTime  = "date"
-	ColumnDirectory = "dir"
-	ColumnCommand   = "command"
-	ColumnStatus    = "status"
-	ColumnHostname  = "host"
-)
-
-var DBPath = os.Getenv("ZSH_HISTORY_FILE")
-
 var (
 	QueryList = fmt.Sprintf("select * from %s", Table)
 )
+
+var DBPath = os.Getenv("ZSH_HISTORY_FILE")
 
 type DBHandler struct {
 	dbMap *gorp.DbMap

@@ -13,8 +13,8 @@ import (
 var (
 	append      = flag.Bool("a", false, "Append to the history")
 	list        = flag.Bool("l", false, "Show all histories")
-	query       = flag.String("q", "", "Query string")
-	interactive = flag.Bool("i", false, "Start to interactive mode")
+	query       = flag.String("q", "", "Query searching")
+	interactive = flag.Bool("i", false, "Start to interactive searching")
 )
 
 func main() {
@@ -32,12 +32,12 @@ func run() int {
 
 	if *append {
 		if flag.NArg() < 2 {
-			return msg(errors.New("too few arguments"))
+			return msg(errors.New("Please give 'command', 'status' arguments"))
 		}
 		cmd := flag.Arg(0)
 		status, err := strconv.Atoi(flag.Arg(1))
 		if err != nil {
-			return msg(errors.New("string not"))
+			return msg(errors.New("'status': not integer"))
 		}
 		err = h.Append(cmd, status)
 		if err != nil {
@@ -46,7 +46,8 @@ func run() int {
 	}
 
 	if *list {
-		if err := h.List(); err != nil {
+		err := h.List()
+		if err != nil {
 			return msg(err)
 		}
 	}

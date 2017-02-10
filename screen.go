@@ -17,15 +17,15 @@ const (
 )
 
 type Screen struct {
-	width         int
-	height        int
-	cursor_x      int
-	selected_line int
-	input         []rune
-	candidates    []string
-	mutex         sync.Mutex
-	history       *History
-	vimMode       bool
+	width        int
+	height       int
+	cursorX      int
+	selectedLine int
+	input        []rune
+	candidates   []string
+	mutex        sync.Mutex
+	history      *History
+	vimMode      bool
 }
 
 func NewScreen(buffer string) *Screen {
@@ -40,10 +40,10 @@ func NewScreen(buffer string) *Screen {
 	}
 
 	s := &Screen{
-		cursor_x:      x,
-		selected_line: 0,
-		input:         input,
-		history:       NewHistory(),
+		cursorX:      x,
+		selectedLine: 0,
+		input:        input,
+		history:      NewHistory(),
 	}
 	rows, _ := s.history.Query(string(input))
 	for _, row := range rows {
@@ -64,82 +64,82 @@ func (s *Screen) IsVimMode() bool {
 func (s *Screen) MoveCusorBegin() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.cursor_x = 0
+	s.cursorX = 0
 }
 
 func (s *Screen) MoveCusorEnd() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.cursor_x = len(s.input)
+	s.cursorX = len(s.input)
 }
 
 func (s *Screen) MoveCusorForward() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.cursor_x < len(s.input) {
-		s.cursor_x++
+	if s.cursorX < len(s.input) {
+		s.cursorX++
 	}
 }
 
 func (s *Screen) MoveCusorBackward() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.cursor_x > 0 {
-		s.cursor_x--
+	if s.cursorX > 0 {
+		s.cursorX--
 	}
 }
 
 func (s *Screen) SelectNext() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.selected_line == len(s.candidates)-1 {
-		s.selected_line = 0
+	if s.selectedLine == len(s.candidates)-1 {
+		s.selectedLine = 0
 	} else {
-		s.selected_line++
+		s.selectedLine++
 	}
 }
 
 func (s *Screen) SelectPrevious() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.selected_line == 0 {
-		s.selected_line = len(s.candidates) - 1
+	if s.selectedLine == 0 {
+		s.selectedLine = len(s.candidates) - 1
 	} else {
-		s.selected_line--
+		s.selectedLine--
 	}
 }
 
 func (s *Screen) DeleteBackwardChar() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.cursor_x > 0 {
-		s.input = append(s.input[0:s.cursor_x-1], s.input[s.cursor_x:len(s.input)]...)
-		s.cursor_x--
-		s.selected_line = 0
+	if s.cursorX > 0 {
+		s.input = append(s.input[0:s.cursorX-1], s.input[s.cursorX:len(s.input)]...)
+		s.cursorX--
+		s.selectedLine = 0
 	}
 }
 
 func (s *Screen) DeleteChar() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.cursor_x < len(s.input) {
-		s.input = append(s.input[0:s.cursor_x], s.input[s.cursor_x+1:len(s.input)]...)
-		s.selected_line = 0
+	if s.cursorX < len(s.input) {
+		s.input = append(s.input[0:s.cursorX], s.input[s.cursorX+1:len(s.input)]...)
+		s.selectedLine = 0
 	}
 }
 
 func (s *Screen) DeleteBackwardWord() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.cursor_x > 0 {
+	if s.cursorX > 0 {
 		var words int
 		pos := regexp.MustCompile(`\s+`).FindStringIndex(string(s.input))
 		if len(pos) > 0 && pos[len(pos)-1] > 0 {
 			words = pos[len(pos)-1]
-			s.input = append(s.input[0:s.cursor_x-words], s.input[s.cursor_x:len(s.input)]...)
+			s.input = append(s.input[0:s.cursorX-words], s.input[s.cursorX:len(s.input)]...)
 		}
-		s.cursor_x -= words
-		s.selected_line = 0
+		s.cursorX -= words
+		s.selectedLine = 0
 	}
 }
 
@@ -147,18 +147,18 @@ func (s *Screen) ClearPrompt() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.input = []rune{}
-	s.cursor_x = 0
+	s.cursorX = 0
 }
 
 func (s *Screen) InsertChar(ch rune) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	tmp := []rune{}
-	tmp = append(tmp, s.input[0:s.cursor_x]...)
+	tmp = append(tmp, s.input[0:s.cursorX]...)
 	tmp = append(tmp, ch)
-	s.input = append(tmp, s.input[s.cursor_x:len(s.input)]...)
-	s.cursor_x++
-	s.selected_line = 0
+	s.input = append(tmp, s.input[s.cursorX:len(s.input)]...)
+	s.cursorX++
+	s.selectedLine = 0
 }
 
 func (s *Screen) SetSize() {
@@ -170,7 +170,7 @@ func (s *Screen) SetSize() {
 func (s *Screen) DrawPrompt() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	setPrompt(s.width, s.cursor_x, s.selected_line, len(s.candidates), s.input)
+	setPrompt(s.width, s.cursorX, s.selectedLine, len(s.candidates), s.input)
 	termbox.Flush()
 }
 
@@ -179,32 +179,32 @@ func (s *Screen) DrawScreen() {
 	defer s.mutex.Unlock()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 
-	setPrompt(s.width, s.cursor_x, s.selected_line, len(s.candidates), s.input)
+	setPrompt(s.width, s.cursorX, s.selectedLine, len(s.candidates), s.input)
 
-	offset_page := s.selected_line / (s.height - 1)
-	offset_line := offset_page * (s.height - 1)
-	for i := 0; i < s.height-1 && i < len(s.candidates)-offset_line; i++ {
-		str := s.candidates[i+offset_line]
+	offsetPage := s.selectedLine / (s.height - 1)
+	offsetLine := offsetPage * (s.height - 1)
+	for i := 0; i < s.height-1 && i < len(s.candidates)-offsetLine; i++ {
+		str := s.candidates[i+offsetLine]
 		setLine(0, i+1, termbox.ColorDefault, termbox.ColorDefault, str)
 	}
 
-	selectLine(s.width, s.height, s.selected_line, s.candidates)
+	selectLine(s.width, s.height, s.selectedLine, s.candidates)
 	termbox.Flush()
 }
 
 func (s *Screen) Filter(done chan<- bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	input_snapshot := s.input
+	inputSnapshot := s.input
 	go func() {
 		rows, _ := s.history.Query(string(s.input))
 		s.candidates = []string{}
 		s.mutex.Lock()
-		if string(s.input) == string(input_snapshot) {
+		if string(s.input) == string(inputSnapshot) {
 			for _, row := range rows {
 				s.candidates = append(s.candidates, row.Command)
 			}
-			s.selected_line = 0
+			s.selectedLine = 0
 			s.mutex.Unlock()
 			done <- true
 		}
@@ -212,11 +212,11 @@ func (s *Screen) Filter(done chan<- bool) {
 	}()
 }
 
-func (s *Screen) Get_output() string {
+func (s *Screen) GetOutput() string {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if len(s.candidates) != 0 {
-		return s.candidates[s.selected_line]
+		return s.candidates[s.selectedLine]
 	}
 	return ""
 }
@@ -230,21 +230,21 @@ func setLine(x, y int, fg, bg termbox.Attribute, strs ...string) {
 	}
 }
 
-func setPrompt(width, cursor_x, selected_line, filtered_candidates_length int, input []rune) {
+func setPrompt(width, cursorX, selectedLine, selectedLineLength int, input []rune) {
 	for x := 0; x < width; x++ {
 		termbox.SetCell(x, 0, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
 	setLine(0, 0, termbox.ColorDefault, termbox.ColorDefault, prompt, string(input))
-	indicator := fmt.Sprintf("[%v/%v]", selected_line+1, filtered_candidates_length)
+	indicator := fmt.Sprintf("[%v/%v]", selectedLine+1, selectedLineLength)
 	setLine(width-len(indicator), 0, termbox.ColorDefault, termbox.ColorDefault, indicator)
-	termbox.SetCursor(runewidth.StringWidth(prompt+string(input[0:cursor_x])), 0)
+	termbox.SetCursor(runewidth.StringWidth(prompt+string(input[0:cursorX])), 0)
 }
 
-func selectLine(width, height, selected_line int, candidates []string) {
+func selectLine(width, height, selectedLine int, candidates []string) {
 	if len(candidates) != 0 {
 		x := 0
-		y := selected_line%(height-1) + 1
-		str := candidates[selected_line]
+		y := selectedLine%(height-1) + 1
+		str := candidates[selectedLine]
 		setLine(0, y, termbox.ColorWhite, termbox.ColorBlue, str)
 		x = runewidth.StringWidth(str)
 		for x < width {

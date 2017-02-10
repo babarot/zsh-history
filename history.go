@@ -68,9 +68,11 @@ func (h *History) Screen(args []string) int {
 
 loop:
 	for {
-		update_prompt := false
-		update_all := false
-		update_with_filtering := false
+		var (
+			updatePrompt     bool
+			updateAll        bool
+			updateWithFilter bool
+		)
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			switch ev.Key {
@@ -80,37 +82,37 @@ loop:
 				break loop
 			case termbox.KeyCtrlA:
 				s.MoveCusorBegin()
-				update_prompt = true
+				updatePrompt = true
 			case termbox.KeyCtrlE:
 				s.MoveCusorEnd()
-				update_prompt = true
+				updatePrompt = true
 			case termbox.KeyArrowRight, termbox.KeyCtrlF:
 				s.MoveCusorForward()
-				update_prompt = true
+				updatePrompt = true
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
 				s.MoveCusorBackward()
-				update_prompt = true
+				updatePrompt = true
 			case termbox.KeyArrowDown, termbox.KeyCtrlN:
 				s.SelectNext()
-				update_all = true
+				updateAll = true
 			case termbox.KeyArrowUp, termbox.KeyCtrlP:
 				s.SelectPrevious()
-				update_all = true
+				updateAll = true
 			case termbox.KeyEnter:
-				output = s.Get_output()
+				output = s.GetOutput()
 				break loop
 			case termbox.KeyBackspace, termbox.KeyBackspace2:
 				s.DeleteBackwardChar()
-				update_with_filtering = true
+				updateWithFilter = true
 			case termbox.KeyDelete, termbox.KeyCtrlD:
 				s.DeleteChar()
-				update_with_filtering = true
+				updateWithFilter = true
 			case termbox.KeyCtrlU:
 				s.ClearPrompt()
-				update_with_filtering = true
+				updateWithFilter = true
 			case termbox.KeyCtrlW:
 				s.DeleteBackwardWord()
-				update_with_filtering = true
+				updateWithFilter = true
 			default:
 				if ev.Key == termbox.KeySpace {
 					ev.Ch = ' '
@@ -120,54 +122,54 @@ loop:
 						switch ev.Ch {
 						case 'j':
 							s.SelectNext()
-							update_all = true
+							updateAll = true
 						case 'k':
 							s.SelectPrevious()
-							update_all = true
+							updateAll = true
 						case 'l':
 							s.MoveCusorForward()
-							update_prompt = true
+							updatePrompt = true
 						case 'h':
 							s.MoveCusorBackward()
-							update_prompt = true
+							updatePrompt = true
 						case '0', '^':
 							s.MoveCusorBegin()
-							update_prompt = true
+							updatePrompt = true
 						case '$':
 							s.MoveCusorEnd()
-							update_prompt = true
+							updatePrompt = true
 						case 'i':
 							s.ToggleVimMode()
 						case 'a':
 							s.ToggleVimMode()
 							s.MoveCusorForward()
-							update_prompt = true
+							updatePrompt = true
 						case 'I':
 							s.ToggleVimMode()
 							s.MoveCusorBegin()
-							update_prompt = true
+							updatePrompt = true
 						case 'A':
 							s.ToggleVimMode()
 							s.MoveCusorEnd()
-							update_prompt = true
+							updatePrompt = true
 						}
 					} else {
 						s.InsertChar(ev.Ch)
-						update_with_filtering = true
+						updateWithFilter = true
 					}
 				}
 			}
 		case termbox.EventResize:
 			s.SetSize()
-			update_all = true
+			updateAll = true
 		}
-		if update_prompt {
+		if updatePrompt {
 			s.DrawPrompt()
 		}
-		if update_all {
+		if updateAll {
 			s.DrawScreen()
 		}
-		if update_with_filtering {
+		if updateWithFilter {
 			s.DrawPrompt()
 			go func() {
 				done := make(chan bool)
