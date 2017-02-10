@@ -3,25 +3,18 @@ package history
 import (
 	"fmt"
 	"os"
-	"regexp"
-	// "sync"
 	"text/tabwriter"
 
+	// "github.com/b4b4r07/zsh-history"
 	"github.com/b4b4r07/zsh-history/db"
-	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
+	// "github.com/b4b4r07/zsh-history/screen"
 )
 
 const (
-	DefaultY     int    = 1
-	Prompt       string = "sqlite3> "
 	DefaultQuery string = "SELECT DISTINCT(command) FROM history WHERE command LIKE '%%' AND status = 0 ORDER BY id DESC"
 	InputPint    string = "%%"
 )
-
-var input = []rune{}
-var width, height int
-var cursor_x, cursor_y int
 
 type History struct {
 	DB   *db.DBHandler
@@ -32,181 +25,6 @@ func NewHistory() *History {
 	return &History{
 		DB:   db.NewDBHandler(),
 		rows: db.Records{},
-	}
-}
-
-func (h *History) Run() int {
-	if !h.render() {
-		return 1
-	}
-	fmt.Println(h.rows)
-	return 0
-}
-
-func (h *History) render() bool {
-	err := termbox.Init()
-	if err != nil {
-		panic(err)
-	}
-	defer termbox.Close()
-
-	input = []rune("select * from history")
-	cursor_x = len(string(input))
-
-	contents := []string{}
-	for {
-		update := false
-
-		h.filterByQuery(string(input))
-		for _, row := range h.rows {
-			contents = append(contents, fmt.Sprintf("%#v", row))
-		}
-		if len(h.rows) == 0 {
-			contents = []string{}
-		}
-		draw(contents)
-		switch ev := termbox.PollEvent(); ev.Type {
-		case termbox.EventKey:
-			switch ev.Key {
-			case termbox.KeyEsc, termbox.KeyCtrlC:
-				return false
-			case termbox.KeyArrowUp, termbox.KeyCtrlP:
-				if cursor_y > 0 {
-					cursor_y--
-				}
-				// update = true
-			case termbox.KeyArrowDown, termbox.KeyCtrlN:
-				if len(h.rows) > 0 {
-					cursor_y++
-				}
-				// update = true
-			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
-				if cursor_x > 0 {
-					cursor_x--
-				}
-			case termbox.KeyArrowRight, termbox.KeyCtrlF:
-				if cursor_x < len([]rune(input)) {
-					cursor_x++
-				}
-			case termbox.KeyHome, termbox.KeyCtrlA:
-				cursor_x = 0
-			case termbox.KeyEnd, termbox.KeyCtrlE:
-				cursor_x = len(string(input))
-			case termbox.KeyBackspace, termbox.KeyBackspace2:
-				// if i := len(input) - 1; i >= 0 {
-				// 	cursor_x--
-				// 	slice := input
-				// 	input = slice[0:i]
-				// }
-				if cursor_x > 0 {
-					input = append(input[0:cursor_x-1], input[cursor_x:len(input)]...)
-					cursor_x--
-					update = true
-				}
-			case termbox.KeyEnter:
-				return true
-			// case termbox.KeySpace:
-			// 	input = append(input, rune(' '))
-			// case 0:
-			// 	input = append(input, rune(ev.Ch))
-			// 	cursor_x++
-			// default:
-			case termbox.KeyCtrlW:
-				part := string(input[0:cursor_x])
-				rest := input[cursor_x:len(input)]
-				pos := regexp.MustCompile(`\s+`).FindStringIndex(part)
-				if len(pos) > 0 && pos[len(pos)-1] > 0 {
-					input = []rune(part[0 : pos[len(pos)-1]-1])
-					input = append(input, rest...)
-				} else {
-					input = []rune{}
-				}
-				cursor_x = len(input)
-				// update = true
-			default:
-				cursor_y = 0
-				if ev.Key == termbox.KeySpace {
-					ev.Ch = ' '
-				}
-				if ev.Ch > 0 {
-					out := []rune{}
-					out = append(out, input[0:cursor_x]...)
-					out = append(out, ev.Ch)
-					input = append(out, input[cursor_x:len(input)]...)
-					cursor_x++
-					// update = true
-				}
-			}
-		case termbox.EventError:
-			panic(ev.Err)
-			break
-		default:
-		}
-		if update {
-			draw(contents)
-		}
-	}
-}
-
-func (h *History) filterByQuery(q string) {
-	// mutex.Lock()
-	// defer mutex.Unlock()
-	//
-	// defer func() {
-	// 	recover()
-	// }()
-
-	if len(h.rows) == 0 {
-		rows, err := h.Query(q)
-		if err == nil {
-			h.rows = rows
-		} else {
-			h.rows = db.Records{}
-		}
-	}
-}
-
-func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
-	for _, c := range []rune(msg) {
-		termbox.SetCell(x, y, c, fg, bg)
-		x += runewidth.RuneWidth(c)
-	}
-}
-
-func draw(rows []string) {
-	width, height = termbox.Size()
-	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-
-	fs := Prompt + string(input)
-	if cursor_y < 0 {
-		cursor_y = 0
-	}
-	if cursor_y >= height {
-		cursor_y = height - 1
-	}
-	drawln(0, 0, fs)
-	pos := len(Prompt)
-	termbox.SetCursor(pos+runewidth.StringWidth(string(input[0:cursor_x])), 0)
-	for idx, row := range rows {
-		if idx == cursor_y {
-			// drawln(0, idx+DefaultY, "hoge")
-			print_tb(0, idx+DefaultY, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, row)
-		} else {
-			print_tb(0, idx+DefaultY, termbox.ColorDefault, termbox.ColorDefault, row)
-			// drawln(0, idx+DefaultY, fmt.Sprintf("%#v\n", row))
-		}
-	}
-	termbox.Flush()
-}
-
-func drawln(x int, y int, str string) {
-	color := termbox.ColorDefault
-	backgroundColor := termbox.ColorDefault
-
-	var c termbox.Attribute
-	for i, s := range str {
-		c = color
-		termbox.SetCell(x+i, y, s, c, backgroundColor)
 	}
 }
 
@@ -232,4 +50,136 @@ func (h *History) List() error {
 
 func (h *History) Query(query string) (db.Records, error) {
 	return h.DB.Query(query)
+}
+
+func (h *History) Run() {
+	output := ""
+	err := termbox.Init()
+	if err != nil {
+		panic(err)
+	}
+
+	s := NewScreen()
+	s.DrawScreen()
+
+	defer func() {
+		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		termbox.Close()
+		if output != "" {
+			fmt.Println(output)
+		}
+	}()
+
+loop:
+	for {
+		update_prompt := false
+		update_all := false
+		update_with_filtering := false
+		switch ev := termbox.PollEvent(); ev.Type {
+		case termbox.EventKey:
+			switch ev.Key {
+			case termbox.KeyEsc:
+				s.ToggleVimMode()
+			case termbox.KeyCtrlC, termbox.KeyCtrlG:
+				break loop
+			case termbox.KeyCtrlA:
+				s.MoveCusorBegin()
+				update_prompt = true
+			case termbox.KeyCtrlE:
+				s.MoveCusorEnd()
+				update_prompt = true
+			case termbox.KeyArrowRight, termbox.KeyCtrlF:
+				s.MoveCusorForward()
+				update_prompt = true
+			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
+				s.MoveCusorBackward()
+				update_prompt = true
+			case termbox.KeyArrowDown, termbox.KeyCtrlN:
+				s.SelectNext()
+				update_all = true
+			case termbox.KeyArrowUp, termbox.KeyCtrlP:
+				s.SelectPrevious()
+				update_all = true
+			case termbox.KeyEnter:
+				output = s.Get_output()
+				break loop
+			case termbox.KeyBackspace, termbox.KeyBackspace2:
+				s.DeleteBackwardChar()
+				update_with_filtering = true
+			case termbox.KeyDelete, termbox.KeyCtrlD:
+				s.DeleteChar()
+				update_with_filtering = true
+			case termbox.KeyCtrlU:
+				s.ClearPrompt()
+				update_with_filtering = true
+			case termbox.KeyCtrlW:
+				s.DeleteBackwardWord()
+				update_with_filtering = true
+			default:
+				if ev.Key == termbox.KeySpace {
+					ev.Ch = ' '
+				}
+				if ev.Ch > 0 {
+					if s.IsVimMode() {
+						switch ev.Ch {
+						case 'j':
+							s.SelectNext()
+							update_all = true
+						case 'k':
+							s.SelectPrevious()
+							update_all = true
+						case 'l':
+							s.MoveCusorForward()
+							update_prompt = true
+						case 'h':
+							s.MoveCusorBackward()
+							update_prompt = true
+						case '0', '^':
+							s.MoveCusorBegin()
+							update_prompt = true
+						case '$':
+							s.MoveCusorEnd()
+							update_prompt = true
+						case 'i':
+							s.ToggleVimMode()
+						case 'a':
+							s.ToggleVimMode()
+							s.MoveCusorForward()
+							update_prompt = true
+						case 'I':
+							s.ToggleVimMode()
+							s.MoveCusorBegin()
+							update_prompt = true
+						case 'A':
+							s.ToggleVimMode()
+							s.MoveCusorEnd()
+							update_prompt = true
+						}
+					} else {
+						s.InsertChar(ev.Ch)
+						update_with_filtering = true
+					}
+				}
+			}
+		case termbox.EventResize:
+			s.SetSize()
+			update_all = true
+		}
+		if update_prompt {
+			s.DrawPrompt()
+		}
+		if update_all {
+			s.DrawScreen()
+		}
+		if update_with_filtering {
+			s.DrawPrompt()
+			go func() {
+				done := make(chan bool)
+				s.Filter(done)
+				if <-done {
+					s.DrawScreen()
+				}
+			}()
+		}
+	}
 }

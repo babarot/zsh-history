@@ -1,4 +1,4 @@
-package screen
+package history
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/b4b4r07/zsh-history"
 	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
 )
@@ -23,20 +22,20 @@ type Screen struct {
 	input         []rune
 	candidates    []string
 	mutex         sync.Mutex
-	h             *history.History
+	history       *History
 	vimMode       bool
 }
 
 func NewScreen() *Screen {
-	input := []rune(history.DefaultQuery)
-	x := strings.Index(string(input), history.InputPint) + 1
+	input := []rune(DefaultQuery)
+	x := strings.Index(string(input), InputPint) + 1
 	s := &Screen{
 		cursor_x:      x, //len(string(input))
 		selected_line: 0,
 		input:         input,
-		h:             history.NewHistory(),
+		history:       NewHistory(),
 	}
-	rows, _ := s.h.Query(string(input))
+	rows, _ := s.history.Query(string(input))
 	for _, row := range rows {
 		s.candidates = append(s.candidates, row.Command)
 	}
@@ -188,7 +187,7 @@ func (s *Screen) Filter(done chan<- bool) {
 	defer s.mutex.Unlock()
 	input_snapshot := s.input
 	go func() {
-		rows, _ := s.h.Query(string(s.input))
+		rows, _ := s.history.Query(string(s.input))
 		s.candidates = []string{}
 		s.mutex.Lock()
 		if string(s.input) == string(input_snapshot) {

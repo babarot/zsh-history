@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/b4b4r07/zsh-history"
-	"github.com/b4b4r07/zsh-history/fourmi"
 )
 
 var (
@@ -64,8 +63,9 @@ func run() int {
 
 	if *interactive {
 		// return h.Run()
-		f := fourmi.New()
-		f.Run()
+		// f := fourmi.New()
+		h.Run()
+		return 0
 	}
 
 	return 0
