@@ -24,6 +24,7 @@ type Screen struct {
 	candidates    []string
 	mutex         sync.Mutex
 	h             *history.History
+	vimMode       bool
 }
 
 func NewScreen() *Screen {
@@ -41,6 +42,14 @@ func NewScreen() *Screen {
 	}
 	s.width, s.height = termbox.Size()
 	return s
+}
+
+func (s *Screen) ToggleVimMode() {
+	s.vimMode = !s.vimMode
+}
+
+func (s *Screen) IsVimMode() bool {
+	return s.vimMode
 }
 
 func (s *Screen) MoveCusorBegin() {
@@ -190,7 +199,6 @@ func (s *Screen) Filter(done chan<- bool) {
 			s.mutex.Unlock()
 			done <- true
 		}
-		// Abort a drawing old results.
 		done <- false
 	}()
 }
@@ -230,7 +238,6 @@ func selectLine(width, height, selected_line int, candidates []string) {
 		str := candidates[selected_line]
 		setLine(0, y, termbox.ColorWhite, termbox.ColorBlue, str)
 		x = runewidth.StringWidth(str)
-		// Pad a string with whitespaces on the right to fill the line width.
 		for x < width {
 			termbox.SetCell(x, y, ' ', termbox.ColorWhite, termbox.ColorBlue)
 			x++

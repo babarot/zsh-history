@@ -3,7 +3,6 @@ package fourmi
 import (
 	"fmt"
 
-	// "github.com/b4b4r07/zsh-history"
 	"github.com/b4b4r07/zsh-history/screen"
 	"github.com/nsf/termbox-go"
 )
@@ -22,12 +21,6 @@ func (f *Fourmi) Run() {
 		panic(err)
 	}
 
-	// candidates := []string{}
-	// h := history.NewHistory()
-	// rows, _ := h.Query("select * from history")
-	// for _, row := range rows {
-	// 	candidates = append(candidates, row.Command)
-	// }
 	s := screen.NewScreen()
 	s.DrawScreen()
 
@@ -47,36 +40,38 @@ loop:
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			switch ev.Key {
-			case termbox.KeyEsc, termbox.KeyCtrlC, termbox.KeyCtrlG: // Terminate.
+			case termbox.KeyEsc:
+				s.ToggleVimMode()
+			case termbox.KeyCtrlC, termbox.KeyCtrlG:
 				break loop
-			case termbox.KeyCtrlA: // Move the cursor to the start.
+			case termbox.KeyCtrlA:
 				s.MoveCusorBegin()
 				update_prompt = true
-			case termbox.KeyCtrlE: // Move the cursor to the end.
+			case termbox.KeyCtrlE:
 				s.MoveCusorEnd()
 				update_prompt = true
-			case termbox.KeyArrowRight, termbox.KeyCtrlF: // Move the cursor to the next character.
+			case termbox.KeyArrowRight, termbox.KeyCtrlF:
 				s.MoveCusorForward()
 				update_prompt = true
-			case termbox.KeyArrowLeft, termbox.KeyCtrlB: // Move the cursor to the previous character.
+			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
 				s.MoveCusorBackward()
 				update_prompt = true
-			case termbox.KeyArrowDown, termbox.KeyCtrlN: // Move the cursor to the next line.
+			case termbox.KeyArrowDown, termbox.KeyCtrlN:
 				s.SelectNext()
 				update_all = true
-			case termbox.KeyArrowUp, termbox.KeyCtrlP: // Move the cursor to the previous line.
+			case termbox.KeyArrowUp, termbox.KeyCtrlP:
 				s.SelectPrevious()
 				update_all = true
-			case termbox.KeyEnter: // Terminate with output.
+			case termbox.KeyEnter:
 				output = s.Get_output()
 				break loop
-			case termbox.KeyBackspace, termbox.KeyBackspace2: // As backspace-key.
+			case termbox.KeyBackspace, termbox.KeyBackspace2:
 				s.DeleteBackwardChar()
 				update_with_filtering = true
-			case termbox.KeyDelete, termbox.KeyCtrlD: // As delete-key.
+			case termbox.KeyDelete, termbox.KeyCtrlD:
 				s.DeleteChar()
 				update_with_filtering = true
-			case termbox.KeyCtrlU: // Make the input empty.
+			case termbox.KeyCtrlU:
 				s.ClearPrompt()
 				update_with_filtering = true
 			case termbox.KeyCtrlW:
@@ -87,8 +82,45 @@ loop:
 					ev.Ch = ' '
 				}
 				if ev.Ch > 0 {
-					s.InsertChar(ev.Ch)
-					update_with_filtering = true
+					if s.IsVimMode() {
+						switch ev.Ch {
+						case 'j':
+							s.SelectNext()
+							update_all = true
+						case 'k':
+							s.SelectPrevious()
+							update_all = true
+						case 'l':
+							s.MoveCusorForward()
+							update_prompt = true
+						case 'h':
+							s.MoveCusorBackward()
+							update_prompt = true
+						case '0', '^':
+							s.MoveCusorBegin()
+							update_prompt = true
+						case '$':
+							s.MoveCusorEnd()
+							update_prompt = true
+						case 'i':
+							s.ToggleVimMode()
+						case 'a':
+							s.ToggleVimMode()
+							s.MoveCusorForward()
+							update_prompt = true
+						case 'I':
+							s.ToggleVimMode()
+							s.MoveCusorBegin()
+							update_prompt = true
+						case 'A':
+							s.ToggleVimMode()
+							s.MoveCusorEnd()
+							update_prompt = true
+						}
+					} else {
+						s.InsertChar(ev.Ch)
+						update_with_filtering = true
+					}
 				}
 			}
 		case termbox.EventResize:
@@ -102,13 +134,10 @@ loop:
 			s.DrawScreen()
 		}
 		if update_with_filtering {
-			// Update prompt immediately.
 			s.DrawPrompt()
-			// Gather filtered candidates.
 			go func() {
 				done := make(chan bool)
 				s.Filter(done)
-				// Draw result if it is not obsolete.
 				if <-done {
 					s.DrawScreen()
 				}
