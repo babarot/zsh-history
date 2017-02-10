@@ -11,7 +11,9 @@ import (
 )
 
 const (
-	prompt string = "sqlite3> "
+	prompt       string = "sqlite3> "
+	defaultQuery string = "SELECT DISTINCT(command) FROM history WHERE command LIKE '%%' AND status = 0 ORDER BY id DESC"
+	wildcard     string = "%"
 )
 
 type Screen struct {
@@ -26,11 +28,19 @@ type Screen struct {
 	vimMode       bool
 }
 
-func NewScreen() *Screen {
-	input := []rune(DefaultQuery)
-	x := strings.Index(string(input), InputPint) + 1
+func NewScreen(buffer string) *Screen {
+	query := defaultQuery
+	if buffer != "" {
+		query = strings.Replace(query, wildcard, wildcard+buffer+wildcard, -1)
+	}
+	input := []rune(query)
+	x := strings.LastIndex(string(input), wildcard)
+	if x < 0 {
+		x = len(string(input))
+	}
+
 	s := &Screen{
-		cursor_x:      x, //len(string(input))
+		cursor_x:      x,
 		selected_line: 0,
 		input:         input,
 		history:       NewHistory(),

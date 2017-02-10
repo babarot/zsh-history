@@ -2,18 +2,13 @@ package history
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"strings"
 	"text/tabwriter"
 
-	// "github.com/b4b4r07/zsh-history"
 	"github.com/b4b4r07/zsh-history/db"
 	"github.com/nsf/termbox-go"
-	// "github.com/b4b4r07/zsh-history/screen"
-)
-
-const (
-	DefaultQuery string = "SELECT DISTINCT(command) FROM history WHERE command LIKE '%%' AND status = 0 ORDER BY id DESC"
-	InputPint    string = "%%"
 )
 
 type History struct {
@@ -52,14 +47,15 @@ func (h *History) Query(query string) (db.Records, error) {
 	return h.DB.Query(query)
 }
 
-func (h *History) Run() {
+func (h *History) Screen(args []string) int {
 	output := ""
 	err := termbox.Init()
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return 1
 	}
 
-	s := NewScreen()
+	s := NewScreen(strings.Join(args, " "))
 	s.DrawScreen()
 
 	defer func() {
@@ -182,4 +178,5 @@ loop:
 			}()
 		}
 	}
+	return 0
 }

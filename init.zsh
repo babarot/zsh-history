@@ -13,6 +13,11 @@ if [[ -n $ZSH_HISTORY_KEYBIND_GET_ALL ]]; then
     bindkey "$ZSH_HISTORY_KEYBIND_GET_ALL" "__zsh_history::keybind::get_all"
 fi
 
+if [[ -n $ZSH_HISTORY_KEYBIND_INTERACTIVE ]]; then
+    zle -N "__zsh_history::keybind::interactive"
+    bindkey "$ZSH_HISTORY_KEYBIND_INTERACTIVE" "__zsh_history::keybind::interactive"
+fi
+
 for f in "${0:A:h}"/zsh/*.zsh(N-.)
 do
     source "$f"

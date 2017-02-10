@@ -21,3 +21,13 @@ __zsh_history::keybind::get_by_dir()
     CURSOR=$#BUFFER
     zle reset-prompt
 }
+
+__zsh_history::keybind::interactive()
+{
+    local res="$(zhist -i $LBUFFER)"
+    if [[ -n $res ]]; then
+        BUFFER="$res"
+        CURSOR=$#BUFFER
+    fi
+    zle reset-prompt
+}

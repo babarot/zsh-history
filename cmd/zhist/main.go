@@ -14,7 +14,7 @@ var (
 	append      = flag.Bool("a", false, "Append to the history")
 	list        = flag.Bool("l", false, "Show all histories")
 	query       = flag.String("q", "", "Query string")
-	interactive = flag.Bool("i", false, "")
+	interactive = flag.Bool("i", false, "Start to interactive mode")
 )
 
 func main() {
@@ -62,10 +62,7 @@ func run() int {
 	}
 
 	if *interactive {
-		// return h.Run()
-		// f := fourmi.New()
-		h.Run()
-		return 0
+		return h.Screen(flag.Args())
 	}
 
 	return 0
