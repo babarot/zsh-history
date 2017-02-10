@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	DefaultY int    = 1
-	Prompt   string = "sqlite3> "
+	DefaultY     int    = 1
+	Prompt       string = "sqlite3> "
+	DefaultQuery string = "SELECT DISTINCT(command) FROM history WHERE command LIKE '%%' AND status = 0 ORDER BY id DESC"
+	InputPint    string = "%%"
 )
 
 var input = []rune{}

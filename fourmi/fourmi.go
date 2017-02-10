@@ -79,6 +79,9 @@ loop:
 			case termbox.KeyCtrlU: // Make the input empty.
 				s.ClearPrompt()
 				update_with_filtering = true
+			case termbox.KeyCtrlW:
+				s.DeleteBackwardWord()
+				update_with_filtering = true
 			default:
 				if ev.Key == termbox.KeySpace {
 					ev.Ch = ' '
