@@ -11,10 +11,9 @@ import (
 )
 
 var (
-	append      = flag.Bool("a", false, "Append to the history")
-	list        = flag.Bool("l", false, "Show all histories")
-	query       = flag.String("q", "", "Query searching")
-	interactive = flag.Bool("i", false, "Start to interactive searching")
+	insert = flag.Bool("i", false, "Insert to the history")
+	query  = flag.String("q", "", "Query searching")
+	screen = flag.Bool("s", false, "Start to screen searching")
 )
 
 func main() {
@@ -30,7 +29,7 @@ func run() int {
 		return msg(errors.New("too few arguments"))
 	}
 
-	if *append {
+	if *insert {
 		if flag.NArg() < 2 {
 			return msg(errors.New("Please give 'command', 'status' arguments"))
 		}
@@ -39,14 +38,7 @@ func run() int {
 		if err != nil {
 			return msg(errors.New("'status': not integer"))
 		}
-		err = h.Append(cmd, status)
-		if err != nil {
-			return msg(err)
-		}
-	}
-
-	if *list {
-		err := h.List()
+		err = h.Insert(cmd, status)
 		if err != nil {
 			return msg(err)
 		}
@@ -62,7 +54,7 @@ func run() int {
 		}
 	}
 
-	if *interactive {
+	if *screen {
 		return h.Screen(flag.Args())
 	}
 

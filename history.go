@@ -23,7 +23,7 @@ func NewHistory() *History {
 	}
 }
 
-func (h *History) Append(cmd string, status int) error {
+func (h *History) Insert(cmd string, status int) error {
 	return h.DB.Insert(cmd, status)
 }
 

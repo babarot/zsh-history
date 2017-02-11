@@ -24,10 +24,15 @@ __zsh_history::keybind::get_by_dir()
 
 __zsh_history::keybind::interactive()
 {
-    local res="$(zhist -i $LBUFFER)"
+    if (( ! $+commands[zhist] )); then
+        return 1
+    fi
+
+    local res="$(zhist -s $LBUFFER)"
     if [[ -n $res ]]; then
         BUFFER="$res"
         CURSOR=$#BUFFER
     fi
+
     zle reset-prompt
 }

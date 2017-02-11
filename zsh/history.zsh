@@ -9,7 +9,7 @@ __zsh_history::history::add()
         return 1
     fi
 
-    zhist -a "$last_command" "$status_code"
+    zhist -i "$last_command" "$status_code"
 }
 
 __zsh_history::history::get()

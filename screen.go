@@ -17,15 +17,14 @@ const (
 )
 
 type Screen struct {
-	width        int
-	height       int
-	cursorX      int
-	selectedLine int
-	input        []rune
-	candidates   []string
-	mutex        sync.Mutex
-	history      *History
-	vimMode      bool
+	width, height int
+	cursorX       int
+	selectedLine  int
+	input         []rune
+	candidates    []string
+	mutex         sync.Mutex
+	history       *History
+	vimMode       bool
 }
 
 func NewScreen(buffer string) *Screen {
@@ -195,20 +194,19 @@ func (s *Screen) DrawScreen() {
 func (s *Screen) Filter(done chan<- bool) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	inputSnapshot := s.input
 	go func() {
-		rows, _ := s.history.Query(string(s.input))
 		s.candidates = []string{}
 		s.mutex.Lock()
-		if string(s.input) == string(inputSnapshot) {
-			for _, row := range rows {
-				s.candidates = append(s.candidates, row.Command)
-			}
-			s.selectedLine = 0
-			s.mutex.Unlock()
-			done <- true
+		rows, err := s.history.Query(string(s.input))
+		if err != nil {
+			done <- false
 		}
-		done <- false
+		for _, row := range rows {
+			s.candidates = append(s.candidates, row.Command)
+		}
+		s.selectedLine = 0
+		s.mutex.Unlock()
+		done <- true
 	}()
 }
 
