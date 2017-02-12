@@ -10,9 +10,10 @@ import (
 )
 
 type config struct {
-	Prompt     string `toml:"prompt"`
-	InitQuery  string `toml:"init_query"`
-	InitCursor string `toml:"init_cursor"`
+	Prompt        string   `toml:"prompt"`
+	InitQuery     string   `toml:"init_query"`
+	InitCursor    string   `toml:"init_cursor"`
+	ScreenColumns []string `toml:"screen_columns"`
 }
 
 const tomlDir = "zhist"
@@ -54,6 +55,7 @@ func (cfg *config) load() error {
 	cfg.InitQuery = DefaultQuery
 	cfg.InitCursor = Wildcard
 	cfg.Prompt = Prompt
+	cfg.ScreenColumns = []string{"command"}
 
 	return toml.NewEncoder(f).Encode(cfg)
 }

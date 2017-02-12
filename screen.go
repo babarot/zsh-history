@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/b4b4r07/zsh-history/db"
+	"github.com/fatih/structs"
 	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
 )
@@ -19,6 +21,31 @@ type Screen struct {
 	mutex         sync.Mutex
 	history       *History
 	vimMode       bool
+}
+
+func getKeyTagMaps() map[string]string {
+	r := &db.Record{}
+	keyTags := make(map[string]string)
+
+	rec := structs.New(r)
+	for _, name := range rec.Names() {
+		f := rec.Field(name)
+		tagValue := f.Tag("db")
+		keyTags[tagValue] = name
+	}
+
+	return keyTags
+}
+
+func convertToKeys(tags []string) []string {
+	var keys []string
+	keyTagMap := getKeyTagMaps()
+	for _, tag := range tags {
+		if key, ok := keyTagMap[tag]; ok {
+			keys = append(keys, key)
+		}
+	}
+	return keys
 }
 
 func NewScreen(buffer string) *Screen {
@@ -47,10 +74,19 @@ func NewScreen(buffer string) *Screen {
 		input:        input,
 		history:      NewHistory(),
 	}
+
 	rows, _ := s.history.Query(string(input))
 	for _, row := range rows {
+		// TODO: imple
+		// msg := ""
+		// rowMap := structs.Map(row)
+		// for _, key := range convertToKeys(cfg.ScreenColumns) {
+		// 	msg += "|" + rowMap[key].(string)
+		// }
+		// s.candidates = append(s.candidates, msg)
 		s.candidates = append(s.candidates, row.Command)
 	}
+
 	s.width, s.height = termbox.Size()
 	return s
 }
