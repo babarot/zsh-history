@@ -10,12 +10,6 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-const (
-	prompt       string = "sqlite3> "
-	defaultQuery string = "SELECT DISTINCT(command) FROM history WHERE command LIKE '%%' AND status = 0 ORDER BY id DESC"
-	wildcard     string = "%"
-)
-
 type Screen struct {
 	width, height int
 	cursorX       int
@@ -28,12 +22,21 @@ type Screen struct {
 }
 
 func NewScreen(buffer string) *Screen {
-	query := defaultQuery
+	var cfg config
+	err := cfg.load()
+	if err != nil {
+		panic(err)
+	}
+
+	query := cfg.InitQuery
 	if buffer != "" {
-		query = strings.Replace(query, wildcard, wildcard+buffer+wildcard, -1)
+		// check SQL syntax
+		if strings.Contains(strings.ToUpper(query), "WHERE") && strings.Contains(strings.ToUpper(query), "LIKE") {
+			query = strings.Replace(query, "%%", "%"+buffer+"%", -1)
+		}
 	}
 	input := []rune(query)
-	x := strings.LastIndex(string(input), wildcard)
+	x := strings.LastIndex(string(input), cfg.InitCursor)
 	if x < 0 {
 		x = len(string(input))
 	}
@@ -229,13 +232,18 @@ func setLine(x, y int, fg, bg termbox.Attribute, strs ...string) {
 }
 
 func setPrompt(width, cursorX, selectedLine, selectedLineLength int, input []rune) {
+	var cfg config
+	err := cfg.load()
+	if err != nil {
+		panic(err)
+	}
 	for x := 0; x < width; x++ {
 		termbox.SetCell(x, 0, ' ', termbox.ColorDefault, termbox.ColorDefault)
 	}
-	setLine(0, 0, termbox.ColorDefault, termbox.ColorDefault, prompt, string(input))
+	setLine(0, 0, termbox.ColorDefault, termbox.ColorDefault, cfg.Prompt, string(input))
 	indicator := fmt.Sprintf("[%v/%v]", selectedLine+1, selectedLineLength)
 	setLine(width-len(indicator), 0, termbox.ColorDefault, termbox.ColorDefault, indicator)
-	termbox.SetCursor(runewidth.StringWidth(prompt+string(input[0:cursorX])), 0)
+	termbox.SetCursor(runewidth.StringWidth(cfg.Prompt+string(input[0:cursorX])), 0)
 }
 
 func selectLine(width, height, selectedLine int, candidates []string) {

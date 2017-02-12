@@ -1,0 +1,59 @@
+package history
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+
+	"github.com/BurntSushi/toml"
+)
+
+type config struct {
+	Prompt     string `toml:"prompt"`
+	InitQuery  string `toml:"init_query"`
+	InitCursor string `toml:"init_cursor"`
+}
+
+const tomlDir = "zhist"
+
+func (cfg *config) load() error {
+	var dir string
+	if runtime.GOOS == "windows" {
+		base := os.Getenv("APPDATA")
+		if base == "" {
+			base = filepath.Join(os.Getenv("USERPROFILE"), "Application Data")
+		}
+		dir = filepath.Join(base, tomlDir)
+	} else {
+		dir = filepath.Join(os.Getenv("HOME"), ".config", tomlDir)
+	}
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("cannot create directory: %v", err)
+	}
+	tomlFile := filepath.Join(dir, "config.toml")
+
+	_, err := os.Stat(tomlFile)
+	if err == nil {
+		_, err := toml.DecodeFile(tomlFile, cfg)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if !os.IsNotExist(err) {
+		return err
+	}
+	f, err := os.Create(tomlFile)
+	if err != nil {
+		return err
+	}
+
+	// Set default value
+	cfg.InitQuery = DefaultQuery
+	cfg.InitCursor = Wildcard
+	cfg.Prompt = Prompt
+
+	return toml.NewEncoder(f).Encode(cfg)
+}

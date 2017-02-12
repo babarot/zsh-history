@@ -11,6 +11,12 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+const (
+	Prompt       string = "sqlite3> "
+	DefaultQuery string = "SELECT DISTINCT(command) FROM history WHERE command LIKE '%%' AND status = 0 ORDER BY id DESC"
+	Wildcard     string = "%"
+)
+
 type History struct {
 	DB   *db.DBHandler
 	rows db.Records
