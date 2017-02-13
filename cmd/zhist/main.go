@@ -7,13 +7,13 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/b4b4r07/zsh-history/db"
+	"github.com/b4b4r07/zsh-history"
 )
 
 var (
-	append = flag.Bool("a", false, "Append to the history")
-	list   = flag.Bool("l", false, "Show all histories")
-	query  = flag.String("q", "", "Query string")
+	insert = flag.Bool("i", false, "Insert to the history")
+	query  = flag.String("q", "", "Query searching")
+	screen = flag.Bool("s", false, "Start to screen searching")
 )
 
 func main() {
@@ -23,42 +23,39 @@ func main() {
 func run() int {
 	flag.Parse()
 
-	dbHandler := db.NewDBHandler()
-	history := &History{dbHandler}
+	h := history.NewHistory()
 
 	if len(os.Args[1:]) == 0 {
 		return msg(errors.New("too few arguments"))
 	}
 
-	if *append {
+	if *insert {
 		if flag.NArg() < 2 {
-			return msg(errors.New("too few arguments"))
+			return msg(errors.New("Please give 'command', 'status' arguments"))
 		}
 		cmd := flag.Arg(0)
 		status, err := strconv.Atoi(flag.Arg(1))
 		if err != nil {
-			return msg(errors.New("string not"))
+			return msg(errors.New("'status': not integer"))
 		}
-		err = history.Append(cmd, status)
+		err = h.Insert(cmd, status)
 		if err != nil {
-			return msg(err)
-		}
-	}
-
-	if *list {
-		if err := history.List(); err != nil {
 			return msg(err)
 		}
 	}
 
 	if *query != "" {
-		rows, err := history.Query(*query)
+		rows, err := h.Query(*query)
 		if err != nil {
 			return msg(err)
 		}
 		for _, row := range rows {
 			fmt.Printf("%s\n", row.Command)
 		}
+	}
+
+	if *screen {
+		return h.Screen(flag.Args())
 	}
 
 	return 0
