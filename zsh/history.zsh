@@ -18,7 +18,7 @@ __zsh_history::history::get()
     filter="$(__zsh_history::utils::get_filter "$ZSH_HISTORY_FILTER")"
 
     if [[ -z $filter ]]; then
-        print -r -- >&2 'zsh-history-enhanced: ZSH_HISTORY_FILTER is an invalid'
+        print -r -- >&2 'zsh-history: ZSH_HISTORY_FILTER is an invalid'
         return 1
     fi
 

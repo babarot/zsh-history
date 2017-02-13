@@ -4,7 +4,7 @@ __zsh_history::keybind::get_all()
 {
     BUFFER="$(
     __zsh_history::history::get \
-        "select distinct(command) from history order by id desc" \
+        "SELECT DISTINCT(command) FROM history ORDER BY id DESC" \
         "$LBUFFER"
     )"
     CURSOR=$#BUFFER
@@ -15,7 +15,7 @@ __zsh_history::keybind::get_by_dir()
 {
     BUFFER="$(
     __zsh_history::history::get \
-        "select distinct(command) from history where dir = '$PWD' and status == 0 order by id desc" \
+        "SELECT DISTINCT(command) FROM history WHERE dir = '$PWD' ORDER BY id DESC" \
         "$LBUFFER"
     )"
     CURSOR=$#BUFFER
@@ -28,6 +28,7 @@ __zsh_history::keybind::screen()
         return 1
     fi
 
+    # Launch with screen
     local res="$(zhist -s $LBUFFER)"
     if [[ -n $res ]]; then
         BUFFER="$res"
@@ -35,4 +36,18 @@ __zsh_history::keybind::screen()
     fi
 
     zle reset-prompt
+}
+
+__zsh_history::keybind::arrow_up()
+{
+    __zsh_history::substring::search_begin
+    __zsh_history::substring::history_up
+    __zsh_history::substring::search_end
+}
+
+__zsh_history::keybind::arrow_down()
+{
+    __zsh_history::substring::search_begin
+    __zsh_history::substring::history_down
+    __zsh_history::substring::search_end
 }
