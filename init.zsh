@@ -13,9 +13,9 @@ if [[ -n $ZSH_HISTORY_KEYBIND_GET_ALL ]]; then
     bindkey "$ZSH_HISTORY_KEYBIND_GET_ALL" "__zsh_history::keybind::get_all"
 fi
 
-if [[ -n $ZSH_HISTORY_KEYBIND_INTERACTIVE ]]; then
-    zle -N "__zsh_history::keybind::interactive"
-    bindkey "$ZSH_HISTORY_KEYBIND_INTERACTIVE" "__zsh_history::keybind::interactive"
+if [[ -n $ZSH_HISTORY_KEYBIND_SCREEN ]]; then
+    zle -N "__zsh_history::keybind::screen"
+    bindkey "$ZSH_HISTORY_KEYBIND_SCREEN" "__zsh_history::keybind::screen"
 fi
 
 for f in "${0:A:h}"/zsh/*.zsh(N-.)

@@ -22,7 +22,7 @@ __zsh_history::keybind::get_by_dir()
     zle reset-prompt
 }
 
-__zsh_history::keybind::interactive()
+__zsh_history::keybind::screen()
 {
     if (( ! $+commands[zhist] )); then
         return 1
