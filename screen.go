@@ -208,7 +208,11 @@ func (s *Screen) SetSize() {
 func (s *Screen) DrawPrompt() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	setPrompt(s.width, s.cursorX, s.selectedLine, len(s.candidates), s.input)
+	var vimMode bool
+	if s.IsVimMode() {
+		vimMode = true
+	}
+	setPrompt(s.width, s.cursorX, s.selectedLine, len(s.candidates), s.input, vimMode)
 	termbox.Flush()
 }
 
@@ -217,7 +221,11 @@ func (s *Screen) DrawScreen() {
 	defer s.mutex.Unlock()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 
-	setPrompt(s.width, s.cursorX, s.selectedLine, len(s.candidates), s.input)
+	var vimMode bool
+	if s.IsVimMode() {
+		vimMode = true
+	}
+	setPrompt(s.width, s.cursorX, s.selectedLine, len(s.candidates), s.input, vimMode)
 
 	offsetPage := s.selectedLine / (s.height - 1)
 	offsetLine := offsetPage * (s.height - 1)
@@ -267,7 +275,7 @@ func setLine(x, y int, fg, bg termbox.Attribute, strs ...string) {
 	}
 }
 
-func setPrompt(width, cursorX, selectedLine, selectedLineLength int, input []rune) {
+func setPrompt(width, cursorX, selectedLine, selectedLineLength int, input []rune, vimMode bool) {
 	var cfg config
 	err := cfg.load()
 	if err != nil {
@@ -278,6 +286,10 @@ func setPrompt(width, cursorX, selectedLine, selectedLineLength int, input []run
 	}
 	setLine(0, 0, termbox.ColorDefault, termbox.ColorDefault, cfg.Prompt, string(input))
 	indicator := fmt.Sprintf("[%v/%v]", selectedLine+1, selectedLineLength)
+	if vimMode {
+		vimIndicator := "VIM-MODE"
+		setLine(width-len(indicator)-len(vimIndicator)-1, 0, termbox.ColorGreen, termbox.ColorDefault, vimIndicator)
+	}
 	setLine(width-len(indicator), 0, termbox.ColorDefault, termbox.ColorDefault, indicator)
 	termbox.SetCursor(runewidth.StringWidth(cfg.Prompt+string(input[0:cursorX])), 0)
 }
