@@ -84,6 +84,7 @@ loop:
 			switch ev.Key {
 			case termbox.KeyEsc:
 				s.ToggleVimMode()
+				updatePrompt = true
 			case termbox.KeyCtrlC, termbox.KeyCtrlG:
 				break loop
 			case termbox.KeyCtrlA:
@@ -146,6 +147,7 @@ loop:
 							updatePrompt = true
 						case 'i':
 							s.ToggleVimMode()
+							updatePrompt = true
 						case 'a':
 							s.ToggleVimMode()
 							s.MoveCusorForward()
