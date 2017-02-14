@@ -13,7 +13,7 @@ fc -t "%F %T" -ln 1 |
 while read f t cmd
 do
     date="$f $t"
-    printf "INSERT INTO 'history' VALUES(%d,'%s','%s','%s',%d,'%s')\n" \
+    printf "INSERT INTO 'history' VALUES(%d,'%s','%s','%s',%d,'%s');\n" \
         "$id" "$date" "" "$cmd" 0 "$host"
     ((id++))
 done
