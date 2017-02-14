@@ -1,9 +1,11 @@
 package history
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"text/tabwriter"
 
@@ -30,6 +32,17 @@ func NewHistory() *History {
 }
 
 func (h *History) Insert(cmd string, status int) error {
+	var cfg config
+	err := cfg.load()
+	if err != nil {
+		errors.New("failed to load config file")
+	}
+	for _, ignore := range cfg.IgnoreWords {
+		if regexp.MustCompile(`\b` + ignore + `\b`).Match([]byte(cmd)) {
+			// skip to insert
+			return nil
+		}
+	}
 	return h.DB.Insert(cmd, status)
 }
 
