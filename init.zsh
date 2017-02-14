@@ -1,6 +1,10 @@
 #!/bin/zsh
 
+zmodload zsh/stat
+zmodload zsh/datetime
+
 export ZSH_HISTORY_FILE=${ZSH_HISTORY_FILE:-"$HOME/.zsh_history.db"}
+ZSH_HISTORY_BACKUP_DIR=${ZSH_HISTORY_BACKUP_DIR:-"$HOME/.zsh/history/backup"}
 ZSH_HISTORY_FILTER=${ZSH_HISTORY_FILTER:-"fzy:fzf-tmux:fzf:peco"}
 ZSH_HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND="bg=magenta,fg=white,bold"
 ZSH_HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND="bg=red,fg=white,bold"
