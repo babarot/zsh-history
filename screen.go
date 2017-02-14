@@ -287,8 +287,8 @@ func setPrompt(width, cursorX, selectedLine, selectedLineLength int, input []run
 	setLine(0, 0, termbox.ColorDefault, termbox.ColorDefault, cfg.Prompt, string(input))
 	indicator := fmt.Sprintf("[%v/%v]", selectedLine+1, selectedLineLength)
 	if vimMode {
-		vimIndicator := "VIM-MODE"
-		setLine(width-len(indicator)-len(vimIndicator)-1, 0, termbox.ColorGreen, termbox.ColorDefault, vimIndicator)
+		vimModePrompt := cfg.VimModePrompt
+		setLine(width-len(indicator)-len(vimModePrompt)-1, 0, termbox.ColorGreen, termbox.ColorDefault, vimModePrompt)
 	}
 	setLine(width-len(indicator), 0, termbox.ColorDefault, termbox.ColorDefault, indicator)
 	termbox.SetCursor(runewidth.StringWidth(cfg.Prompt+string(input[0:cursorX])), 0)

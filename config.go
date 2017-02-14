@@ -14,6 +14,7 @@ type config struct {
 	InitQuery     string   `toml:"init_query"`
 	InitCursor    string   `toml:"init_cursor"`
 	ScreenColumns []string `toml:"screen_columns"`
+	VimModePrompt string   `toml:"vim_mode_prompt"`
 }
 
 const tomlDir = "zhist"
@@ -56,6 +57,7 @@ func (cfg *config) load() error {
 	cfg.InitCursor = Wildcard
 	cfg.Prompt = Prompt
 	cfg.ScreenColumns = []string{"command"}
+	cfg.VimModePrompt = "VIM-MODE"
 
 	return toml.NewEncoder(f).Encode(cfg)
 }
