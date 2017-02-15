@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"text/tabwriter"
 
 	"github.com/b4b4r07/zsh-history"
+	"github.com/fatih/structs"
 )
 
 var (
@@ -49,8 +51,36 @@ func run() int {
 		if err != nil {
 			return msg(err)
 		}
+		w := new(tabwriter.Writer)
+		w.Init(os.Stdout, 0, 8, 0, '\t', 0)
 		for _, row := range rows {
-			fmt.Printf("%s\n", row.Command)
+			// fmt.Printf("%s\n", row.Command)
+			// fmt.Printf("%#v\n", row)
+			str := ""
+			c := []string{"DateTime", "Directory", "Command"}
+			r := structs.Map(row)
+			for _, v := range c {
+				switch x := r[v].(type) {
+				case int:
+					// fmt.Printf("%d ", x)
+					str += fmt.Sprintf("%d\t", x)
+				case string:
+					// fmt.Printf("%s ", x)
+					str += fmt.Sprintf("%s\t", x)
+				}
+			}
+			// fmt.Printf("\n")
+			fmt.Fprintln(w, str)
+			w.Flush()
+			// for _, v := range structs.Map(row) {
+			// 	switch x := v.(type) {
+			// 	case int:
+			// 		fmt.Printf("%d ", x)
+			// 	case string:
+			// 		fmt.Printf("%s ", x)
+			// 	}
+			// }
+			// fmt.Printf("\n")
 		}
 	}
 
