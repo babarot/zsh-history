@@ -52,6 +52,7 @@ func (cfg *config) load() error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	// Set default value
 	cfg.InitQuery = DefaultQuery
